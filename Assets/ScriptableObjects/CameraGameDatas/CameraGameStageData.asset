@@ -1,0 +1,22 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a282bdbd9b25dc94c90a1bb7c41dcb11, type: 3}
+  m_Name: CameraGameStageData
+  m_EditorClassIdentifier: Assembly-CSharp::CameraGameStageData
+  foodPrefabs:
+  - {fileID: 8939875435510517991, guid: 5fffed9db90bcb94ebfe1a7699c459b5, type: 3}
+  - {fileID: 6764661314804855492, guid: 0de0fbca2efb34d4d8b2d27411856f10, type: 3}
+  - {fileID: 8562231110343125758, guid: c5b177175219bbb419840c8d9e76e33b, type: 3}
+  spawnInterval: 0.5
+  fallSpeed: 5
+  timeLimit: 60
+  groundY: -10

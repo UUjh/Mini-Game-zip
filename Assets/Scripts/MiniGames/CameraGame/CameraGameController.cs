@@ -2,7 +2,11 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using System.Collections.Generic;
-using MiniGame.CameraGame;
+using Mediapipe.Unity;
+using Mediapipe.Tasks.Vision.HandLandmarker;
+using Mediapipe.Tasks.Vision.FaceLandmarker;
+using Mediapipe.Unity.Sample.HandLandmarkDetection;
+using Mediapipe.Unity.Sample.FaceLandmarkDetection;
 
 /// <summary>
 /// 간단한 카메라 게임 컨트롤러.
@@ -31,10 +35,14 @@ public class CameraGameController : MonoBehaviour
     [SerializeField] private TextMeshProUGUI timerText;
     [SerializeField] private TextMeshProUGUI debugText;
     
-    [Header("MediaPipe (나중에 연결)")]
-    [SerializeField] private HandResultHolder handResultHolder;
-    [SerializeField] private FaceResultHolder faceResultHolder;
+    [Header("MediaPipe")]
     [SerializeField] private Camera gameCamera;
+    
+    // MediaPipe AnnotationController (Reflection으로 결과 읽기)
+    [SerializeField] private HandLandmarkerResultAnnotationController handAnnotationController;
+    [SerializeField] private FaceLandmarkerResultAnnotationController faceAnnotationController;
+    private System.Reflection.FieldInfo handResultField;
+    private System.Reflection.FieldInfo faceResultField;
     
     private float remainingTime;
     private int score;
@@ -43,16 +51,37 @@ public class CameraGameController : MonoBehaviour
     
     private bool gameStarted = false;
     
-    // 임시: 손/입 위치 (MediaPipe 연결 전 테스트용)
-    private Vector3 handWorldPos;
+    // 손/입 위치
+    private List<Vector3> handPositions = new List<Vector3>(); // 양손 모두 저장
     private Vector3 mouthWorldPos;
-    private bool handDetected = false;
     private bool faceDetected = false;
     
     private void Start()
     {
         if (gameCamera == null)
             gameCamera = Camera.main;
+        
+        if (handAnnotationController != null)
+        {
+            handResultField = handAnnotationController.GetType().GetField("_currentTarget", 
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            Debug.Log($"[CameraGame] ✅ Hand Annotation 찾음 ({handAnnotationController.gameObject.name})");
+        }
+        else
+        {
+            Debug.LogWarning("[CameraGame] ⚠️ HandLandmarkerResultAnnotationController가 씬에 없습니다!");
+        }
+        
+        if (faceAnnotationController != null)
+        {
+            faceResultField = faceAnnotationController.GetType().GetField("_currentTarget", 
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            Debug.Log($"[CameraGame] ✅ Face Annotation 찾음 ({faceAnnotationController.gameObject.name})");
+        }
+        else
+        {
+            Debug.LogWarning("[CameraGame] ⚠️ FaceLandmarkerResultAnnotationController가 씬에 없습니다!");
+        }
             
         remainingTime = gameTime;
         score = 0;
@@ -102,62 +131,71 @@ public class CameraGameController : MonoBehaviour
     
     private void UpdateHandAndMouthPosition()
     {
-        // 60프레임마다 한 번씩 로그
-        if (Time.frameCount % 60 == 0)
-        {
-            Debug.Log($"[CameraGameController] handResultHolder: {(handResultHolder != null ? "연결됨" : "NULL")}, faceResultHolder: {(faceResultHolder != null ? "연결됨" : "NULL")}");
-        }
+        // 손 위치 업데이트 (양손 모두 인식)
+        handPositions.Clear();
         
-        // MediaPipe ResultHolder에서 손/얼굴 위치 가져오기
-        if (handResultHolder != null && handResultHolder.IsDetected)
+        if (handAnnotationController != null && handResultField != null)
         {
-            var result = handResultHolder.LatestResult.Value;
-            if (result.handLandmarks != null && result.handLandmarks.Count > 0)
+            try
             {
-                var landmarks = result.handLandmarks[0];
-                if (landmarks.landmarks.Count > 8)
+                var result = handResultField.GetValue(handAnnotationController);
+                if (result is HandLandmarkerResult handResult)
                 {
-                    var indexFinger = landmarks.landmarks[8];
-                    Vector2 screenNorm = new Vector2(indexFinger.x, 1f - indexFinger.y);
-                    Vector3 screenPos = new Vector3(
-                        screenNorm.x * Screen.width,
-                        screenNorm.y * Screen.height,
-                        10f
-                    );
-                    handWorldPos = gameCamera.ScreenToWorldPoint(screenPos);
-                    handDetected = true;
+                    if (handResult.handLandmarks != null && handResult.handLandmarks.Count > 0)
+                    {
+                        // 모든 손을 순회
+                        foreach (var landmarks in handResult.handLandmarks)
+                        {
+                            if (landmarks.landmarks.Count > 8)
+                            {
+                                var indexFinger = landmarks.landmarks[8];
+                                Vector2 screenNorm = new Vector2(indexFinger.x, 1f - indexFinger.y);
+                                Vector3 screenPos = new Vector3(
+                                    screenNorm.x * UnityEngine.Screen.width,
+                                    screenNorm.y * UnityEngine.Screen.height,
+                                    10f
+                                );
+                                Vector3 worldPos = gameCamera.ScreenToWorldPoint(screenPos);
+                                handPositions.Add(worldPos);
+                            }
+                        }
+                    }
                 }
             }
-        }
-        else
-        {
-            handDetected = false;
+            catch { }
         }
         
-        if (faceResultHolder != null && faceResultHolder.IsDetected)
+        // 얼굴 위치 업데이트 (Reflection으로 AnnotationController에서 직접 읽기)
+        if (faceAnnotationController != null && faceResultField != null)
         {
-            var result = faceResultHolder.LatestResult.Value;
-            if (result.faceLandmarks != null && result.faceLandmarks.Count > 0)
+            try
             {
-                var landmarks = result.faceLandmarks[0];
-                if (landmarks.landmarks.Count > 13)
+                var result = faceResultField.GetValue(faceAnnotationController);
+                if (result is FaceLandmarkerResult faceResult)
                 {
-                    var mouthCenter = landmarks.landmarks[13];
-                    Vector2 screenNorm = new Vector2(mouthCenter.x, 1f - mouthCenter.y);
-                    Vector3 screenPos = new Vector3(
-                        screenNorm.x * Screen.width,
-                        screenNorm.y * Screen.height,
-                        10f
-                    );
-                    mouthWorldPos = gameCamera.ScreenToWorldPoint(screenPos);
-                    faceDetected = true;
+                    if (faceResult.faceLandmarks != null && faceResult.faceLandmarks.Count > 0)
+                    {
+                        var landmarks = faceResult.faceLandmarks[0];
+                        if (landmarks.landmarks.Count > 13)
+                        {
+                            var mouthCenter = landmarks.landmarks[13];
+                            Vector2 screenNorm = new Vector2(mouthCenter.x, 1f - mouthCenter.y);
+                            Vector3 screenPos = new Vector3(
+                                screenNorm.x * UnityEngine.Screen.width,
+                                screenNorm.y * UnityEngine.Screen.height,
+                                10f
+                            );
+                            mouthWorldPos = gameCamera.ScreenToWorldPoint(screenPos);
+                            faceDetected = true;
+                            return;
+                        }
+                    }
                 }
             }
+            catch { }
         }
-        else
-        {
-            faceDetected = false;
-        }
+        
+        faceDetected = false;
     }
     
     private void SpawnFood()
@@ -201,16 +239,19 @@ public class CameraGameController : MonoBehaviour
                 continue;
             }
             
-            // 손과 충돌 체크
-            if (handDetected)
+            // 손과 충돌 체크 (양손 모두)
+            bool eaten = false;
+            foreach (var handPos in handPositions)
             {
-                float distToHand = Vector3.Distance(food.transform.position, handWorldPos);
+                float distToHand = Vector3.Distance(food.transform.position, handPos);
                 if (distToHand < handCollisionRadius)
                 {
                     EatFood(i);
-                    continue;
+                    eaten = true;
+                    break;
                 }
             }
+            if (eaten) continue;
             
             // 입과 충돌 체크
             if (faceDetected)
@@ -231,7 +272,6 @@ public class CameraGameController : MonoBehaviour
         GameObject food = activeFoods[index];
         activeFoods.RemoveAt(index);
         ReturnFoodToPool(food);
-        Debug.Log($"[CameraGame] 음식 먹음! 점수: {score}");
     }
     
     private void ReturnFoodToPool(GameObject food)
@@ -250,17 +290,16 @@ public class CameraGameController : MonoBehaviour
     private void UpdateUI()
     {
         if (scoreText != null)
-            scoreText.text = $"점수: {score}";
+            scoreText.text = $"Score: {score}";
             
         if (timerText != null)
-            timerText.text = $"시간: {Mathf.CeilToInt(remainingTime)}초";
+            timerText.text = $"Time: {Mathf.CeilToInt(remainingTime)}s";
             
         if (debugText != null)
         {
             string debug = "";
-            debug += handDetected ? "✅ 손 인식됨\n" : "❌ 손 인식 안됨\n";
-            debug += faceDetected ? "✅ 얼굴 인식됨\n" : "❌ 얼굴 인식 안됨\n";
-            debug += $"활성 음식: {activeFoods.Count}개\n";
+            debug += handPositions.Count > 0 ? $"Hands: {handPositions.Count}\n" : "Hands: Not Detected\n";
+            debug += faceDetected ? "Face: Detected\n" : "Face: Not Detected\n";
             debugText.text = debug;
         }
     }
@@ -277,24 +316,5 @@ public class CameraGameController : MonoBehaviour
                 ReturnFoodToPool(food);
         }
         activeFoods.Clear();
-    }
-    
-    private void OnDrawGizmos()
-    {
-        if (!Application.isPlaying) return;
-        
-        // 손 위치 표시 (초록)
-        if (handDetected)
-        {
-            Gizmos.color = Color.green;
-            Gizmos.DrawWireSphere(handWorldPos, handCollisionRadius);
-        }
-        
-        // 입 위치 표시 (빨강)
-        if (faceDetected)
-        {
-            Gizmos.color = Color.red;
-            Gizmos.DrawWireSphere(mouthWorldPos, mouthCollisionRadius);
-        }
     }
 }

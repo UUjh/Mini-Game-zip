@@ -1,0 +1,19 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4dc4c47692e47fe4e8cc7fb1621a543e, type: 3}
+  m_Name: AppleGame
+  m_EditorClassIdentifier: Assembly-CSharp::MiniGameData
+  gameName: AppleGame
+  description: "\uB4DC\uB798\uADF8\uB85C \uC9C1\uC0AC\uAC01\uD615\uC744 \uACE0\uB974\uACE0 \uD569\uC774 10\uC774 \uB418\uBA74 \uC0AC\uB77C\uC9D1\uB2C8\uB2E4. 60\uCD08 \uB3D9\uC548 \uC810\uC218\uB97C \uBAA8\uC73C\uC138\uC694."
+  icon: {fileID: 0}
+  difficulty: 1
+  sceneName: AppleGame

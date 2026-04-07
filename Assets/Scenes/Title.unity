@@ -558,6 +558,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::TitleManager
   gameDataList:
   - {fileID: 11400000, guid: c3f8e360670cd4b4fa394d69c6549a6e, type: 2}
+  - {fileID: 11400000, guid: e1f2a3b4c5d6e7f8090123456789abcd, type: 2}
   buttonContainer: {fileID: 484868013}
   buttonPrefab: {fileID: 1648800299767683544, guid: be925784a03135341b04a8f9c263dd37, type: 3}
 --- !u!4 &1637046510

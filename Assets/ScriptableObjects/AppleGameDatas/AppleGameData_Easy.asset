@@ -1,0 +1,22 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f1a2b3c4d5e6f708192a3b4c5d6e7f8a, type: 3}
+  m_Name: AppleGameData_Easy
+  m_EditorClassIdentifier: Assembly-CSharp::AppleGameStageData
+  stageName: Easy
+  timeLimit: 60
+  gridColumns: 17
+  gridRows: 10
+  useEasyFillRules: 1
+  gridCellSize: {x: 60, y: 60}
+  gridCellSpacing: {x: 10, y: 10}
+  cellPrefab: {fileID: 3308045405520505092, guid: 82b8d225c8940874da8b2afb0084cd3b, type: 3}
